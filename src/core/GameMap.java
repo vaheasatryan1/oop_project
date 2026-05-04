@@ -3,8 +3,8 @@ package core;
 import exceptions.InvalidMapException;
 
 public class GameMap {
-    private static final int REQUIRED_ROWS = 15;
-    private static final int REQUIRED_COLS = 60;
+    private static final int REQUIRED_ROWS = 20;
+    private static final int REQUIRED_COLS = 30;
 
     private final char[][] grid;
     private final int rows;
