@@ -1,72 +1,64 @@
 package core;
 
-import exceptions.InvalidMapException;
-
 public class GameMap {
-    private static final int REQUIRED_ROWS = 20;
-    private static final int REQUIRED_COLS = 30;
-
+    private final String id;
     private final char[][] grid;
     private final int rows;
     private final int cols;
     private Position playerStart;
+    private final String nextMapId;
 
-    public GameMap(String mapText) {
+    public GameMap(String id, String mapText, String nextMapId) {
+        this.id = id;
+        this.nextMapId = nextMapId;
+
         String[] lines = mapText.strip().split("\\R");
+        this.rows = lines.length;
+        this.cols = lines[0].length();
+        this.grid = new char[rows][cols];
 
-        rows = lines.length;
-        cols = lines[0].length();
-
-        if (rows != REQUIRED_ROWS || cols != REQUIRED_COLS) {
-            throw new InvalidMapException("Map must be exactly 20 rows and 40 columns.");
-        }
-
-        grid = new char[rows][cols];
-
-        for (int row = 0; row < rows; row++) {
-            if (lines[row].length() != REQUIRED_COLS) {
-                throw new InvalidMapException("Each row must be exactly 40 characters.");
-            }
-
-            for (int col = 0; col < cols; col++) {
-                char symbol = lines[row].charAt(col);
-
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
+                char symbol = lines[r].charAt(c);
                 if (symbol == 'P') {
-                    playerStart = new Position(row, col);
-                    grid[row][col] = '.';
+                    playerStart = new Position(r, c);
+                    grid[r][c] = '.';
                 } else {
-                    grid[row][col] = symbol;
+                    grid[r][c] = symbol;
                 }
             }
         }
 
         if (playerStart == null) {
-            throw new InvalidMapException("Map must contain player start P.");
+            throw new IllegalArgumentException("Map must contain a player start P.");
         }
     }
 
-    public char getTile(Position position) {
-        return grid[position.row()][position.col()];
+    // Convenience constructor for single-map use (no id or nextMapId needed)
+    public GameMap(String mapText) {
+        this("default", mapText, null);
     }
 
-    public boolean isWall(Position position) {
-        return getTile(position) == '#';
+    public String getId() { return id; }
+    public String getNextMapId() { return nextMapId; }
+    public Position getPlayerStart() { return playerStart; }
+    public int getRows() { return rows; }
+    public int getCols() { return cols; }
+
+    public char getTile(Position pos) {
+        return grid[pos.row()][pos.col()];
     }
 
-    public boolean isInside(Position position) {
-        return position.row() >= 0 && position.row() < rows &&
-                position.col() >= 0 && position.col() < cols;
+    public void setTile(Position pos, char symbol) {
+        grid[pos.row()][pos.col()] = symbol;
     }
 
-    public Position getPlayerStart() {
-        return playerStart;
+    public boolean isInside(Position pos) {
+        return pos.row() >= 0 && pos.row() < rows
+                && pos.col() >= 0 && pos.col() < cols;
     }
 
-    public int getRows() {
-        return rows;
-    }
-
-    public int getCols() {
-        return cols;
+    public boolean isWall(Position pos) {
+        return getTile(pos) == '#';
     }
 }

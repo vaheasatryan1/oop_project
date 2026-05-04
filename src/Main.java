@@ -1,57 +1,64 @@
+import cli.CliInputHandler;
 import cli.CliRenderer;
+import core.Direction;
+import core.Game;
 import core.GameMap;
 import core.Player;
-import core.Game;
-import java.util.Scanner;
+import ui.Renderer;
 
 public class Main {
     public static void main(String[] args) {
         String mapText = """
-            ##############################
-            #P...........................#
-            #....######..................#
-            #............................#
-            #..........####..............#
-            #............................#
-            #..####......................#
-            #............................#
-            #...............######.......#
-            #............................#
-            #......1.....................#
-            #............................#
-            #............####............#
-            #............................#
-            #..2.....................3...#
-            #............................#
-            #....................#####...#
-            #..........................D.#
-            #............................#
-            ##############################
-            """;
+##############################
+#P...........................#
+#....######..................#
+#............................#
+#..........####..............#
+#............................#
+#..####......................#
+#............................#
+#...............######.......#
+#............................#
+#......1.....................#
+#............................#
+#............####............#
+#............................#
+#..2.....................3...#
+#............................#
+#....................#####...#
+#..........................D.#
+#............................#
+##############################
+""";
+
+
 
         GameMap map = new GameMap(mapText);
         Player player = new Player(map.getPlayerStart());
-        Game game = new Game(map, player);
-        CliRenderer renderer = new CliRenderer();
 
-        Scanner scanner = new Scanner(System.in);
+        Renderer renderer = new CliRenderer();
+        Game game = new Game(map, player, renderer);
+
+        CliInputHandler input = new CliInputHandler();
 
         while (true) {
-            renderer.render(map, player);
+            game.render();
+            System.out.print("WASD to move, Q to quit: ");
 
-            System.out.print("Move with WASD, q to quit: ");
-            String input = scanner.nextLine();
+            String raw = input.readRaw();
 
-            if (input.equalsIgnoreCase("q")) {
-                break;
-            }
+            if (input.isQuit(raw)) break;
 
-            switch (input.toLowerCase()) {
-                case "w" -> game.movePlayer(-1, 0);
-                case "s" -> game.movePlayer(1, 0);
-                case "a" -> game.movePlayer(0, -1);
-                case "d" -> game.movePlayer(0, 1);
-                default -> System.out.print("");
+            Direction dir = switch (raw.toLowerCase()) {
+                case "w" -> Direction.UP;
+                case "s" -> Direction.DOWN;
+                case "a" -> Direction.LEFT;
+                case "d" -> Direction.RIGHT;
+                default -> null;
+            };
+
+            if (dir != null) {
+                game.movePlayer(dir);
             }
 
             System.out.println();
