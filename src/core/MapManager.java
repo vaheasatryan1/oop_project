@@ -10,24 +10,16 @@ public class MapManager {
 
     public void addMap(GameMap map) {
         maps.put(map.getId(), map);
-        if (currentMap == null) {
-            currentMap = map;
-        }
+        if (currentMap == null) currentMap = map;
     }
 
-    public GameMap getCurrentMap() {
-        return currentMap;
-    }
+    public GameMap getCurrentMap() { return currentMap; }
 
     public void switchToMap(String mapId) {
         GameMap next = maps.get(mapId);
-        if (next == null) {
-            throw new MapNotFoundException(mapId);
-        }
+        if (next == null) throw new MapNotFoundException(mapId);
         currentMap = next;
     }
 
-    public boolean hasMap(String mapId) {
-        return maps.containsKey(mapId);
-    }
+    public boolean hasMap(String mapId) { return maps.containsKey(mapId); }
 }

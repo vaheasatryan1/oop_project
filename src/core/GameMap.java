@@ -14,12 +14,17 @@ public class GameMap {
 
         String[] lines = mapText.strip().split("\\R");
         this.rows = lines.length;
-        this.cols = lines[0].length();
+
+        int maxCols = 0;
+        for (String line : lines) {
+            if (line.length() > maxCols) maxCols = line.length();
+        }
+        this.cols = maxCols;
         this.grid = new char[rows][cols];
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                char symbol = lines[r].charAt(c);
+                char symbol = c < lines[r].length() ? lines[r].charAt(c) : '#';
                 if (symbol == 'P') {
                     playerStart = new Position(r, c);
                     grid[r][c] = '.';
@@ -30,20 +35,33 @@ public class GameMap {
         }
 
         if (playerStart == null) {
-            throw new IllegalArgumentException("Map must contain a player start P.");
+            throw new IllegalArgumentException("Map " + id + " must contain P.");
         }
     }
 
-    // Convenience constructor for single-map use (no id or nextMapId needed)
     public GameMap(String mapText) {
         this("default", mapText, null);
     }
 
-    public String getId() { return id; }
-    public String getNextMapId() { return nextMapId; }
-    public Position getPlayerStart() { return playerStart; }
-    public int getRows() { return rows; }
-    public int getCols() { return cols; }
+    public String getId() {
+        return id;
+    }
+
+    public String getNextMapId() {
+        return nextMapId;
+    }
+
+    public Position getPlayerStart() {
+        return playerStart;
+    }
+
+    public int getRows() {
+        return rows;
+    }
+
+    public int getCols() {
+        return cols;
+    }
 
     public char getTile(Position pos) {
         return grid[pos.row()][pos.col()];
@@ -54,8 +72,7 @@ public class GameMap {
     }
 
     public boolean isInside(Position pos) {
-        return pos.row() >= 0 && pos.row() < rows
-                && pos.col() >= 0 && pos.col() < cols;
+        return pos.row() >= 0 && pos.row() < rows && pos.col() >= 0 && pos.col() < cols;
     }
 
     public boolean isWall(Position pos) {
