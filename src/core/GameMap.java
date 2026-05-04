@@ -1,5 +1,7 @@
 package core;
 
+import exceptions.InvalidMapException;
+
 public class GameMap {
     private static final int REQUIRED_ROWS = 20;
     private static final int REQUIRED_COLS = 40;
@@ -16,14 +18,14 @@ public class GameMap {
         cols = lines[0].length();
 
         if (rows != REQUIRED_ROWS || cols != REQUIRED_COLS) {
-            throw new IllegalArgumentException("Map must be exactly 20 rows and 40 columns.");
+            throw new InvalidMapException("Map must be exactly 20 rows and 40 columns.");
         }
 
         grid = new char[rows][cols];
 
         for (int row = 0; row < rows; row++) {
             if (lines[row].length() != REQUIRED_COLS) {
-                throw new IllegalArgumentException("Each row must be exactly 40 characters.");
+                throw new InvalidMapException("Each row must be exactly 40 characters.");
             }
 
             for (int col = 0; col < cols; col++) {
@@ -39,7 +41,7 @@ public class GameMap {
         }
 
         if (playerStart == null) {
-            throw new IllegalArgumentException("Map must contain player start P.");
+            throw new InvalidMapException("Map must contain player start P.");
         }
     }
 
