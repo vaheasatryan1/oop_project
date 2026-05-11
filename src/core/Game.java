@@ -62,6 +62,22 @@ public class Game {
 
     public boolean isGameComplete() { return gameComplete; }
 
+    public GameMap getCurrentMap() {
+        return mapManager.getCurrentMap();
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public Inventory getInventory() {
+        return inventory;
+    }
+
+    public String getCurrentMapId() {
+        return mapManager.getCurrentMap().getId();
+    }
+
     public void movePlayer(Direction direction) {
         GameMap map = mapManager.getCurrentMap();
         Position nextPosition = player.getPosition().move(direction.getDRow(), direction.getDCol());

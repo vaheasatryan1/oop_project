@@ -28,6 +28,12 @@ public class Inventory {
         return parts != null && parts.contains('1') && parts.contains('2') && parts.contains('3');
     }
 
+    public Set<Character> getKeyPartsForMap(String mapId) {
+        Set<Character> parts = keyPartsByMap.get(mapId);
+        if (parts == null) return java.util.Collections.emptySet();
+        return new HashSet<>(parts);
+    }
+
     // --- RESOURCES ---
 
     public void addResource(Resource resource) {
