@@ -6,20 +6,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class Inventory {
-    // key tracking
     private final Set<String> fullKeys = new HashSet<>();
     private final Map<String, Set<Character>> keyPartsByMap = new HashMap<>();
-
-    // resources
     private final Map<Resource, Integer> resources = new HashMap<>();
-
-    // crafted items
     private final Map<Item, Integer> items = new HashMap<>();
-
-    // equipped item
     private Item equippedItem = null;
 
-    // --- KEY METHODS ---
+    // --- KEY ---
 
     public void collectFullKey(String mapId) {
         fullKeys.add(mapId);
@@ -35,15 +28,25 @@ public class Inventory {
         return parts != null && parts.contains('1') && parts.contains('2') && parts.contains('3');
     }
 
-    // --- RESOURCE METHODS ---
+    // --- RESOURCES ---
 
     public void addResource(Resource resource) {
         resources.merge(resource, 1, Integer::sum);
     }
 
+    /**
+     * FIX: previously used <= which silently swallowed over-removal.
+     * Now throws if the caller asks to remove more than is held.
+     */
     public void removeResource(Resource resource, int amount) {
         int current = resources.getOrDefault(resource, 0);
-        if (current <= amount) {
+        if (current < amount) {
+            throw new IllegalStateException(
+                    "Cannot remove " + amount + " " + resource.name() +
+                            "; only " + current + " held."
+            );
+        }
+        if (current == amount) {
             resources.remove(resource);
         } else {
             resources.put(resource, current - amount);
@@ -58,10 +61,11 @@ public class Inventory {
         return resources;
     }
 
-    // --- ITEM METHODS ---
+    // --- ITEMS ---
 
     public void addItem(Item item) {
         items.merge(item, 1, Integer::sum);
+        // auto-equip only if nothing is equipped yet
         if (equippedItem == null) equippedItem = item;
     }
 
@@ -73,7 +77,10 @@ public class Inventory {
         int current = items.getOrDefault(item, 0);
         if (current <= 1) {
             items.remove(item);
-            if (equippedItem == item) equippedItem = null;
+            if (equippedItem == item) {
+                // equip next available item, or nothing
+                equippedItem = items.isEmpty() ? null : items.keySet().iterator().next();
+            }
         } else {
             items.put(item, current - 1);
         }
@@ -85,6 +92,7 @@ public class Inventory {
 
     public Item getEquippedItem() { return equippedItem; }
 
+    /** FIX: equipItem was never reachable before; now called from Game.equipBySlot */
     public void equipItem(Item item) {
         if (hasItem(item)) equippedItem = item;
     }

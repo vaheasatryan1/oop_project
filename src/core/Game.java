@@ -29,14 +29,12 @@ public class Game {
     private void printHUD() {
         String mapId = mapManager.getCurrentMap().getId();
 
-        // key status
         if (inventory.hasKeyForMap(mapId)) {
             System.out.println("Key: COMPLETE");
         } else {
             System.out.println("Key: incomplete");
         }
 
-        // resources
         StringBuilder res = new StringBuilder("Resources: ");
         if (inventory.getAllResources().isEmpty()) {
             res.append("none");
@@ -47,7 +45,6 @@ public class Game {
         }
         System.out.println(res);
 
-        // items
         StringBuilder itm = new StringBuilder("Items: ");
         if (inventory.getAllItems().isEmpty()) {
             itm.append("none");
@@ -58,10 +55,9 @@ public class Game {
         }
         System.out.println(itm);
 
-        // equipped
         Item equipped = inventory.getEquippedItem();
         System.out.println("Equipped: " + (equipped != null ? equipped.getName() : "nothing"));
-        System.out.println("Controls: WASD=move  E=use  C=craft  I=inventory  Q=quit");
+        System.out.println("Controls: WASD=move  E=use  C=craft  I=inventory  1/2=equip  Q=quit");
     }
 
     public boolean isGameComplete() { return gameComplete; }
@@ -72,17 +68,16 @@ public class Game {
 
         if (!map.isInside(nextPosition)) return;
 
-        char tile = map.getTile(nextPosition);
+        Tile tile = Tile.fromChar(map.getTile(nextPosition));
 
-        if (tile == '#') return;
+        if (tile == Tile.WALL) return;
 
-        if (tile == 'W') {
+        if (tile == Tile.BREAKABLE_WALL) {
             System.out.println("Breakable wall! Equip a PICKAXE or BOMB and press E.");
             return;
         }
 
-        // pick up resource
-        Resource resource = Resource.fromChar(tile);
+        Resource resource = Resource.fromChar(map.getTile(nextPosition));
         if (resource != null) {
             inventory.addResource(resource);
             map.setTile(nextPosition, '.');
@@ -91,7 +86,7 @@ public class Game {
             return;
         }
 
-        if (tile == 'K') {
+        if (tile == Tile.KEY) {
             inventory.collectFullKey(map.getId());
             map.setTile(nextPosition, '.');
             player.setPosition(nextPosition);
@@ -99,18 +94,19 @@ public class Game {
             return;
         }
 
-        if (tile == '1' || tile == '2' || tile == '3') {
-            inventory.collectKeyPart(map.getId(), tile);
+        if (tile.isKeyPart()) {
+            char part = map.getTile(nextPosition);
+            inventory.collectKeyPart(map.getId(), part);
             map.setTile(nextPosition, '.');
             player.setPosition(nextPosition);
-            System.out.println("Key part " + tile + " collected!");
+            System.out.println("Key part " + part + " collected!");
             if (inventory.hasKeyForMap(map.getId())) {
                 System.out.println("You have all key parts! Find the door.");
             }
             return;
         }
 
-        if (tile == 'D') {
+        if (tile == Tile.DOOR) {
             if (inventory.hasKeyForMap(map.getId())) {
                 switchToNextMap(map);
             } else {
@@ -132,7 +128,6 @@ public class Game {
         GameMap map = mapManager.getCurrentMap();
         Position pos = player.getPosition();
 
-        // check all 4 neighbors for a breakable wall
         Position[] neighbors = {
                 pos.move(-1, 0),
                 pos.move(1, 0),
@@ -140,14 +135,13 @@ public class Game {
                 pos.move(0, 1)
         };
 
-        boolean broke = false;
-
         if (equipped == Item.PICKAXE) {
+            boolean broke = false;
             for (Position neighbor : neighbors) {
                 if (map.isInside(neighbor) && map.getTile(neighbor) == 'W') {
                     map.setTile(neighbor, '.');
                     broke = true;
-                    break; // pickaxe breaks one wall
+                    break; // pickaxe breaks only one wall
                 }
             }
             if (broke) {
@@ -156,13 +150,16 @@ public class Game {
             } else {
                 System.out.println("No breakable wall next to you.");
             }
+            return;
         }
 
         if (equipped == Item.BOMB) {
+            boolean broke = false;
             for (Position neighbor : neighbors) {
                 if (map.isInside(neighbor) && map.getTile(neighbor) == 'W') {
                     map.setTile(neighbor, '.');
-                    // bomb also breaks neighbors of that wall
+                    broke = true;
+                    // blast also clears the wall's own neighbors
                     Position[] blastNeighbors = {
                             neighbor.move(-1, 0),
                             neighbor.move(1, 0),
@@ -174,9 +171,9 @@ public class Game {
                             map.setTile(blast, '.');
                         }
                     }
-                    broke = true;
                 }
             }
+            // consume after processing all walls — one bomb, one use
             if (broke) {
                 inventory.consumeItem(Item.BOMB);
                 System.out.println("BOOM! Walls destroyed!");
@@ -186,41 +183,30 @@ public class Game {
         }
     }
 
-    public void openCrafting(java.util.Scanner scanner) {
+    /**
+     * Crafting menu — no Scanner parameter; input is handled by the caller.
+     * Returns the list of recipes so the CLI handler can display and drive choices.
+     */
+    public List<Recipe> getCraftingRecipes() {
+        return craftingSystem.getRecipes();
+    }
+
+    public boolean canCraft(Recipe recipe) {
+        return craftingSystem.canCraft(recipe, inventory);
+    }
+
+    public boolean craft(int recipeIndex) {
         List<Recipe> recipes = craftingSystem.getRecipes();
+        if (recipeIndex < 0 || recipeIndex >= recipes.size()) return false;
+        return craftingSystem.craft(recipes.get(recipeIndex), inventory);
+    }
 
-        System.out.println("\n--- CRAFTING ---");
-        inventory.getAllResources().forEach((r, amt) ->
-                System.out.println("  " + r.name() + " x" + amt)
-        );
-        System.out.println();
-
-        for (int i = 0; i < recipes.size(); i++) {
-            Recipe recipe = recipes.get(i);
-            String canCraft = craftingSystem.canCraft(recipe, inventory) ? " [can craft]" : " [need more resources]";
-            System.out.println("[" + (i + 1) + "] " + recipe.describe() + canCraft);
-        }
-
-        System.out.print("Enter number to craft, Q to close: ");
-        String input = scanner.nextLine().trim();
-
-        if (input.equalsIgnoreCase("q")) return;
-
-        try {
-            int choice = Integer.parseInt(input) - 1;
-            if (choice < 0 || choice >= recipes.size()) {
-                System.out.println("Invalid choice.");
-                return;
-            }
-            Recipe chosen = recipes.get(choice);
-            if (craftingSystem.craft(chosen, inventory)) {
-                System.out.println("Crafted: " + chosen.getResult().getName());
-            } else {
-                System.out.println("Not enough resources.");
-            }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input.");
-        }
+    /** Equip an item by slot number (1-based index of getAllItems keyset). */
+    public boolean equipBySlot(int slot) {
+        List<Item> items = new java.util.ArrayList<>(inventory.getAllItems().keySet());
+        if (slot < 1 || slot > items.size()) return false;
+        inventory.equipItem(items.get(slot - 1));
+        return true;
     }
 
     public void showInventory() {
@@ -233,17 +219,19 @@ public class Game {
                     System.out.println("  " + r.name() + " x" + amt)
             );
         }
-        System.out.println("Items:");
+        System.out.println("Items (press 1/2 to equip):");
         if (inventory.getAllItems().isEmpty()) {
             System.out.println("  none");
         } else {
-            inventory.getAllItems().forEach((i, amt) ->
-                    System.out.println("  " + i.getName() + " x" + amt)
-            );
+            int slot = 1;
+            for (java.util.Map.Entry<Item, Integer> e : inventory.getAllItems().entrySet()) {
+                String tag = e.getKey() == inventory.getEquippedItem() ? " [equipped]" : "";
+                System.out.println("  [" + slot + "] " + e.getKey().getName() + " x" + e.getValue() + tag);
+                slot++;
+            }
         }
         String mapId = mapManager.getCurrentMap().getId();
-        System.out.println("Key parts for this level: " +
-                (inventory.hasKeyForMap(mapId) ? "COMPLETE" : "incomplete"));
+        System.out.println("Key: " + (inventory.hasKeyForMap(mapId) ? "COMPLETE" : "incomplete"));
     }
 
     private void switchToNextMap(GameMap currentMap) {

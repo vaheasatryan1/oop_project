@@ -6,7 +6,6 @@ import core.GameMap;
 import core.Inventory;
 import core.MapManager;
 import ui.Renderer;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
@@ -244,7 +243,8 @@ public class Main {
         Inventory inventory = new Inventory();
         Renderer renderer = new CliRenderer();
         Game game = new Game(mapManager, inventory, renderer);
-        Scanner scanner = new Scanner(System.in);
+
+        // FIX: single CliInputHandler owns the sole Scanner for System.in
         CliInputHandler input = new CliInputHandler();
 
         while (true) {
@@ -258,9 +258,11 @@ public class Main {
                 case "a" -> game.movePlayer(Direction.LEFT);
                 case "d" -> game.movePlayer(Direction.RIGHT);
                 case "e" -> game.useItem();
-                case "c" -> game.openCrafting(scanner);
+                case "c" -> input.openCrafting(game);   // FIX: no Scanner passed to Game
                 case "i" -> game.showInventory();
-                default -> System.out.println("Unknown key.");
+                case "1" -> { if (game.equipBySlot(1)) System.out.println("Slot 1 equipped."); }
+                case "2" -> { if (game.equipBySlot(2)) System.out.println("Slot 2 equipped."); }
+                default  -> System.out.println("Unknown key.");
             }
 
             if (game.isGameComplete()) {

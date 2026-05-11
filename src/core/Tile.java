@@ -2,6 +2,7 @@ package core;
 
 public enum Tile {
     WALL('#'),
+    BREAKABLE_WALL('W'),
     FLOOR('.'),
     PLAYER_START('P'),
     DOOR('D'),
@@ -9,30 +10,28 @@ public enum Tile {
     KEY_PART_1('1'),
     KEY_PART_2('2'),
     KEY_PART_3('3'),
+    RESOURCE_ROCK('R'),
+    RESOURCE_STICK('S'),
     UNKNOWN('?');
 
     private final char symbol;
 
-    Tile(char symbol) {
-        this.symbol = symbol;
-    }
+    Tile(char symbol) { this.symbol = symbol; }
 
-    public char getSymbol() {
-        return symbol;
-    }
+    public char getSymbol() { return symbol; }
 
     public static Tile fromChar(char c) {
         for (Tile tile : values()) {
-            if (tile.symbol == c) {
-                return tile;
-            }
+            if (tile.symbol == c) return tile;
         }
         return UNKNOWN;
     }
 
     public boolean isWalkable() {
-        return this == FLOOR || this == KEY || this == KEY_PART_1
-                || this == KEY_PART_2 || this == KEY_PART_3;
+        return this == FLOOR || this == KEY
+                || this == KEY_PART_1 || this == KEY_PART_2 || this == KEY_PART_3
+                || this == RESOURCE_ROCK || this == RESOURCE_STICK
+                || this == DOOR;
     }
 
     public boolean isKeyPart() {

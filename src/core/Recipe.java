@@ -1,6 +1,7 @@
 package core;
 
 import java.util.Map;
+import java.util.StringJoiner;
 
 public class Recipe {
     private final Item result;
@@ -14,13 +15,10 @@ public class Recipe {
     public Item getResult() { return result; }
     public Map<Resource, Integer> getIngredients() { return ingredients; }
 
+    // FIX: StringJoiner replaces the manual sb.substring(0, sb.length() - 3) hack
     public String describe() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(result.getName()).append(" = ");
-        ingredients.forEach((res, amt) ->
-                sb.append(amt).append(" ").append(res.name()).append(" + ")
-        );
-        // remove trailing " + "
-        return sb.substring(0, sb.length() - 3);
+        StringJoiner sj = new StringJoiner(" + ");
+        ingredients.forEach((res, amt) -> sj.add(amt + " " + res.name()));
+        return result.getName() + " = " + sj;
     }
 }
