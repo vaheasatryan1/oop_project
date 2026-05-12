@@ -232,8 +232,8 @@ public class GameFrame extends JFrame {
         bind("RIGHT", () -> move(Direction.RIGHT));
         bind("E", this::useEquippedItem);
         bind("C", this::openCraftingDialog);
-        bind("DIGIT1", () -> equipSlot(1));
-        bind("DIGIT2", () -> equipSlot(2));
+        bind("1", () -> equipSlot(1));
+        bind("2", () -> equipSlot(2));
         bind("ESCAPE", this::dispose);
     }
 
