@@ -42,14 +42,15 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 public class GameFrame extends JFrame {
-    private static final Color BG = new Color(255, 255, 255, 0);
-    private static final Color BG2 = new Color(0, 0, 0, 0);
-    private static final Color BG3 = new Color(28, 33, 40, 0);
-    private static final Color BORDER = new Color(48, 54, 61, 0);
+    private static final Color BG = new Color(13, 17, 23);
+    private static final Color BG2 = new Color(22, 27, 34);
+    private static final Color BG3 = new Color(28, 33, 40);
+    private static final Color BORDER = new Color(48, 54, 61);
     private static final Color GOLD = new Color(226, 185, 111);
     private static final Color GOLD2 = new Color(245, 215, 142);
     private static final Color DIM = new Color(110, 118, 129);
     private static final Color GREEN = new Color(63, 185, 80);
+    private static final Color RED = new Color(248, 81, 73);
     private static final Color AMBER = new Color(210, 153, 34);
 
     private final Supplier<Game> gameFactory;
