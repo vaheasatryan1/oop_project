@@ -36,22 +36,20 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
 public class GameFrame extends JFrame {
-    private static final Color BG = new Color(13, 17, 23);
-    private static final Color BG2 = new Color(22, 27, 34);
-    private static final Color BG3 = new Color(28, 33, 40);
-    private static final Color BORDER = new Color(48, 54, 61);
+    private static final Color BG = new Color(255, 255, 255, 0);
+    private static final Color BG2 = new Color(0, 0, 0, 0);
+    private static final Color BG3 = new Color(28, 33, 40, 0);
+    private static final Color BORDER = new Color(48, 54, 61, 0);
     private static final Color GOLD = new Color(226, 185, 111);
     private static final Color GOLD2 = new Color(245, 215, 142);
     private static final Color DIM = new Color(110, 118, 129);
     private static final Color GREEN = new Color(63, 185, 80);
-    private static final Color RED = new Color(248, 81, 73);
     private static final Color AMBER = new Color(210, 153, 34);
 
     private final Supplier<Game> gameFactory;
@@ -151,24 +149,24 @@ public class GameFrame extends JFrame {
         JPanel wrapper = new JPanel(new BorderLayout(4, 8));
         wrapper.setBackground(BG2);
 
-        JPanel dpad = new JPanel(new GridLayout(3, 3, 4, 4));
-        dpad.setBackground(BG2);
-        dpad.add(new JLabel());
-        dpad.add(button("▲", () -> move(Direction.UP)));
-        dpad.add(new JLabel());
-        dpad.add(button("◄", () -> move(Direction.LEFT)));
-        dpad.add(button("▼", () -> move(Direction.DOWN)));
-        dpad.add(button("►", () -> move(Direction.RIGHT)));
-        dpad.add(new JLabel());
-        dpad.add(button("USE", this::useEquippedItem));
-        dpad.add(button("CRAFT", this::openCraftingDialog));
+        JPanel dPad = new JPanel(new GridLayout(3, 3, 4, 4));
+        dPad.setBackground(BG2);
+        dPad.add(new JLabel());
+        dPad.add(button("▲", () -> move(Direction.UP)));
+        dPad.add(new JLabel());
+        dPad.add(button("◄", () -> move(Direction.LEFT)));
+        dPad.add(button("▼", () -> move(Direction.DOWN)));
+        dPad.add(button("►", () -> move(Direction.RIGHT)));
+        dPad.add(new JLabel());
+        dPad.add(button("USE", this::useEquippedItem));
+        dPad.add(button("CRAFT", this::openCraftingDialog));
 
         JPanel row = new JPanel(new GridLayout(1, 2, 4, 0));
         row.setBackground(BG2);
         row.add(button("RESET", this::restartGame));
         row.add(button("QUIT", this::dispose));
 
-        wrapper.add(dpad, BorderLayout.CENTER);
+        wrapper.add(dPad, BorderLayout.CENTER);
         wrapper.add(row, BorderLayout.SOUTH);
         return wrapper;
     }
