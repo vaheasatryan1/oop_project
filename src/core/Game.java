@@ -157,7 +157,7 @@ public class Game {
                 if (map.isInside(neighbor) && map.getTile(neighbor) == 'W') {
                     map.setTile(neighbor, '.');
                     broke = true;
-                    break; // pickaxe breaks only one wall
+                    break;
                 }
             }
             if (broke) {
