@@ -175,7 +175,6 @@ public class Game {
                 if (map.isInside(neighbor) && map.getTile(neighbor) == 'W') {
                     map.setTile(neighbor, '.');
                     broke = true;
-                    // blast also clears the wall's own neighbors
                     Position[] blastNeighbors = {
                             neighbor.move(-1, 0),
                             neighbor.move(1, 0),
@@ -189,7 +188,6 @@ public class Game {
                     }
                 }
             }
-            // consume after processing all walls — one bomb, one use
             if (broke) {
                 inventory.consumeItem(Item.BOMB);
                 System.out.println("BOOM! Walls destroyed!");
