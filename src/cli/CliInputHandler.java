@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class CliInputHandler {
-    // FIX: one Scanner for all of stdin — never create a second one in Main or Game
+
     private final Scanner scanner = new Scanner(System.in);
 
     public String readRaw() {
@@ -18,10 +18,7 @@ public class CliInputHandler {
         return input.equalsIgnoreCase("q");
     }
 
-    /**
-     * FIX: crafting menu moved here from Game.openCrafting(Scanner).
-     * Game no longer touches a Scanner at all.
-     */
+
     public void openCrafting(Game game) {
         List<Recipe> recipes = game.getCraftingRecipes();
 

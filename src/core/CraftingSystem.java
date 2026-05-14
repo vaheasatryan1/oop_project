@@ -8,13 +8,13 @@ public class CraftingSystem {
     private final List<Recipe> recipes = new ArrayList<>();
 
     public CraftingSystem() {
-        // PICKAXE = 2 ROCK + 1 STICK
+
         recipes.add(new Recipe(Item.PICKAXE, Map.of(
                 Resource.ROCK, 2,
                 Resource.STICK, 1
         )));
 
-        // BOMB = 1 ROCK + 2 STICK
+
         recipes.add(new Recipe(Item.BOMB, Map.of(
                 Resource.ROCK, 1,
                 Resource.STICK, 2

@@ -12,7 +12,7 @@ public class Inventory {
     private final Map<Item, Integer> items = new HashMap<>();
     private Item equippedItem = null;
 
-    // --- KEY ---
+
 
     public void collectFullKey(String mapId) {
         fullKeys.add(mapId);
@@ -34,16 +34,13 @@ public class Inventory {
         return new HashSet<>(parts);
     }
 
-    // --- RESOURCES ---
+
 
     public void addResource(Resource resource) {
         resources.merge(resource, 1, Integer::sum);
     }
 
-    /**
-     * FIX: previously used <= which silently swallowed over-removal.
-     * Now throws if the caller asks to remove more than is held.
-     */
+
     public void removeResource(Resource resource, int amount) {
         int current = resources.getOrDefault(resource, 0);
         if (current < amount) {
@@ -67,7 +64,7 @@ public class Inventory {
         return resources;
     }
 
-    // --- ITEMS ---
+
 
     public void addItem(Item item) {
         items.merge(item, 1, Integer::sum);
@@ -98,7 +95,7 @@ public class Inventory {
 
     public Item getEquippedItem() { return equippedItem; }
 
-    /** FIX: equipItem was never reachable before; now called from Game.equipBySlot */
+
     public void equipItem(Item item) {
         if (hasItem(item)) equippedItem = item;
     }

@@ -15,7 +15,7 @@ public class Recipe {
     public Item getResult() { return result; }
     public Map<Resource, Integer> getIngredients() { return ingredients; }
 
-    // FIX: StringJoiner replaces the manual sb.substring(0, sb.length() - 3) hack
+
     public String describe() {
         StringJoiner sj = new StringJoiner(" + ");
         ingredients.forEach((res, amt) -> sj.add(amt + " " + res.name()));

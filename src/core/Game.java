@@ -199,10 +199,7 @@ public class Game {
         }
     }
 
-    /**
-     * Crafting menu — no Scanner parameter; input is handled by the caller.
-     * Returns the list of recipes so the CLI handler can display and drive choices.
-     */
+
     public List<Recipe> getCraftingRecipes() {
         return craftingSystem.getRecipes();
     }
@@ -217,7 +214,7 @@ public class Game {
         return craftingSystem.craft(recipes.get(recipeIndex), inventory);
     }
 
-    /** Equip an item by slot number (1-based index of getAllItems keyset). */
+
     public boolean equipBySlot(int slot) {
         List<Item> items = new java.util.ArrayList<>(inventory.getAllItems().keySet());
         if (slot < 1 || slot > items.size()) return false;

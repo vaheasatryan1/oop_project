@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dungeon Crawler — Interactive Architecture Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#06080d;
+  --panel:#0e131b;
+  --panel2:#111827;
+  --line:#2b3443;
+  --text:#e5edf7;
+  --muted:#7b8798;
+  --gold:#d6a85f;
+  --purple:#8b5cf6;
+  --green:#22c55e;
+  --blue:#3b82f6;
+  --teal:#14b8a6;
+  --red:#ef4444;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+html{
+  scroll-behavior:smooth;
+}
+
+body{
+  background:
+    radial-gradient(circle at top,#131a28 0%,#070a10 50%,#05070b 100%);
+  color:var(--text);
+  font-family:'Inter',sans-serif;
+  overflow:hidden;
+}
+
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  opacity:.2;
+}
+
+.topbar{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:500;
+  background:rgba(5,8,14,.88);
+  backdrop-filter:blur(18px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding:20px 28px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+}
+
+.brand h1{
+  font-size:28px;
+  font-weight:800;
+  letter-spacing:1px;
+}
+
+.brand p{
+  color:var(--muted);
+  margin-top:5px;
+  font-size:13px;
+}
+
+.controls{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.search{
+  background:#0d1219;
+  border:1px solid #222d3a;
+  color:white;
+  padding:12px 16px;
+  border-radius:12px;
+  width:260px;
+  outline:none;
+  transition:.2s;
+}
+
+.search:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 4px rgba(214,168,95,.12);
+}
+
+.btn{
+  border:1px solid #293241;
+  background:#0d1219;
+  color:#cfd8e3;
+  padding:11px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  transition:.2s ease;
+  font-weight:600;
+}
+
+.btn:hover,
+.btn.active{
+  border-color:var(--gold);
+  color:var(--gold);
+  background:rgba(214,168,95,.08);
+}
+
+.quicknav{
+  display:flex;
+  gap:10px;
+  margin-top:18px;
+  flex-wrap:wrap;
+}
+
+.chip{
+  padding:8px 14px;
+  border-radius:999px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  color:#b9c4d2;
+  font-size:13px;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.chip:hover{
+  border-color:var(--gold);
+  color:var(--gold);
+}
+
+.legend{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  margin-top:16px;
+  flex-wrap:wrap;
+}
+
+.legend-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:#96a1b1;
+  font-size:12px;
+}
+
+.legend-line{
+  width:38px;
+  height:2px;
+  border-radius:999px;
+}
+
+.legend-line.hasa{background:#a8b3c5;}
+.legend-line.depends{border-top:2px dashed #6b7280;}
+.legend-line.impl{border-top:2px dashed var(--purple);}
+.legend-line.create{border-top:2px dashed var(--green);}
+
+.main{
+  display:flex;
+  height:100vh;
+  padding-top:160px;
+}
+
+.viewport{
+  flex:1;
+  overflow:auto;
+  position:relative;
+}
+
+.canvas{
+  position:relative;
+  width:2200px;
+  height:1500px;
+  transform-origin:top left;
+  transition:transform .18s ease;
+}
+
+.sidebar{
+  width:360px;
+  background:rgba(7,10,16,.94);
+  border-left:1px solid rgba(255,255,255,.06);
+  padding:28px;
+  overflow:auto;
+  z-index:100;
+}
+
+.sidebar h2{
+  font-size:26px;
+  margin-bottom:10px;
+}
+
+.sidebar .role{
+  color:var(--gold);
+  font-weight:700;
+  margin-bottom:20px;
+}
+
+.sidebar p,
+.sidebar li{
+  color:#9aa7b7;
+  line-height:1.7;
+}
+
+.sidebar h3{
+  margin-top:28px;
+  margin-bottom:10px;
+  font-size:14px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  color:#cfd6df;
+}
+
+.section-banner{
+  position:absolute;
+  padding:14px 22px;
+  border-radius:18px;
+  font-weight:800;
+  letter-spacing:1px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);
+  backdrop-filter:blur(12px);
+  box-shadow:0 10px 50px rgba(0,0,0,.35);
+}
+
+.world{ top:240px; left:1300px; }
+.inventory-sec{ top:720px; left:960px; }
+.render-sec{ top:1040px; left:1260px; }
+.engine{ top:120px; left:940px; }
+.boot{ top:1260px; left:300px; }
+
+.card{
+  position:absolute;
+  width:260px;
+  background:rgba(14,19,27,.92);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:22px;
+  overflow:hidden;
+  transition:.25s ease;
+  box-shadow:0 18px 40px rgba(0,0,0,.35);
+  backdrop-filter:blur(10px);
+  z-index:2;
+}
+
+.card:hover{
+  transform:translateY(-8px) scale(1.02);
+  border-color:rgba(214,168,95,.55);
+  box-shadow:0 25px 70px rgba(0,0,0,.45);
+}
+
+.card.active{
+  border-color:var(--gold);
+  box-shadow:0 0 0 1px rgba(214,168,95,.4),0 0 40px rgba(214,168,95,.18);
+  z-index:20;
+}
+
+.card.dim{
+  opacity:.14;
+  filter:grayscale(.5);
+}
+
+.card-header{
+  padding:18px 20px 14px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.badge{
+  display:inline-block;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:8px;
+  color:#b5bfd0;
+}
+
+.card h3{
+  font-size:22px;
+  margin-bottom:6px;
+}
+
+.sub{
+  color:#8391a5;
+  font-size:13px;
+}
+
+.stats{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  flex-wrap:wrap;
+}
+
+.stat{
+  font-size:11px;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.05);
+  color:#b6c2d0;
+}
+
+.body{
+  padding:18px 20px;
+}
+
+.group-title{
+  color:#98a5b6;
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:10px;
+}
+
+.method,
+.field{
+  font-family:'JetBrains Mono',monospace;
+  color:#d7e0ec;
+  font-size:12px;
+  margin-bottom:8px;
+  line-height:1.55;
+}
+
+.core{
+  background:linear-gradient(180deg,#17112d,#0f1420);
+}
+
+.core .card-header{ background:rgba(139,92,246,.09); }
+.world-card .card-header{ background:rgba(214,168,95,.08); }
+.inventory-card .card-header{ background:rgba(59,130,246,.08); }
+.render-card .card-header{ background:rgba(20,184,166,.08); }
+.cli-card .card-header{ background:rgba(239,68,68,.08); }
+
+.game{
+  width:340px;
+  transform:scale(1.03);
+  border-color:rgba(139,92,246,.5);
+  box-shadow:0 0 80px rgba(139,92,246,.18);
+}
+
+.game::after{
+  content:'';
+  position:absolute;
+  inset:-1px;
+  border-radius:22px;
+  padding:1px;
+  background:linear-gradient(45deg,transparent,var(--purple),transparent);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  animation:pulse 4s linear infinite;
+}
+
+@keyframes pulse{
+  0%{opacity:.2}
+  50%{opacity:.8}
+  100%{opacity:.2}
+}
+
+svg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+
+.connection{
+  opacity:.32;
+  transition:.2s;
+}
+
+.connection.active{
+  opacity:1;
+  filter:drop-shadow(0 0 10px currentColor);
+}
+
+.connection.hidden{
+  opacity:0;
+}
+
+.minimap{
+  position:fixed;
+  bottom:20px;
+  right:390px;
+  width:220px;
+  height:160px;
+  border-radius:18px;
+  background:rgba(10,14,22,.9);
+  border:1px solid rgba(255,255,255,.08);
+  overflow:hidden;
+  z-index:300;
+}
+
+.minimap::before{
+  content:'SYSTEM MAP';
+  position:absolute;
+  top:10px;
+  left:12px;
+  font-size:11px;
+  color:#95a1b1;
+  letter-spacing:1px;
+}
+
+.mini-dot{
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#d6a85f;
+  opacity:.7;
+}
+
+.viewport-box{
+  position:absolute;
+  border:1px solid rgba(214,168,95,.8);
+  background:rgba(214,168,95,.08);
+}
+
+.zoom-controls{
+  position:fixed;
+  bottom:20px;
+  left:20px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  z-index:400;
+}
+
+.zoom-btn{
+  width:48px;
+  height:48px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(10,13,20,.92);
+  color:white;
+  font-size:22px;
+  cursor:pointer;
+}
+
+.small{
+  font-size:12px;
+  color:#8b98a8;
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="header">
+    <div class="brand">
+      <h1>Dungeon Crawler — Architecture Map</h1>
+      <p>Interactive UML System Visualization · OOP Project</p>
+    </div>
+
+    <div class="controls">
+      <input class="search" id="search" placeholder="Search class..." />
+
+      <button class="btn active" data-filter="all">All</button>
+      <button class="btn" data-filter="hasa">Has-A</button>
+      <button class="btn" data-filter="depends">Depends</button>
+      <button class="btn" data-filter="implements">Implements</button>
+      <button class="btn" data-filter="creates">Creates</button>
+    </div>
+  </div>
+
+  <div class="quicknav">
+    <div class="chip" data-scroll="engine">Game Engine</div>
+    <div class="chip" data-scroll="world">World System</div>
+    <div class="chip" data-scroll="inventory">Inventory</div>
+    <div class="chip" data-scroll="render">Rendering</div>
+    <div class="chip" data-scroll="boot">Entry Points</div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-line hasa"></div>Has-A / Composition</div>
+    <div class="legend-item"><div class="legend-line depends"></div>Uses / Depends</div>
+    <div class="legend-item"><div class="legend-line impl"></div>Implements</div>
+    <div class="legend-item"><div class="legend-line create"></div>Creates</div>
+  </div>
+</div>
+
+<div class="main">
+
+<div class="viewport" id="viewport">
+<div class="canvas" id="canvas">
+
+<svg>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="currentColor"></path>
+    </marker>
+  </defs>
+
+  <line class="connection hasa" x1="980" y1="280" x2="680" y2="320" stroke="#bfc8d6" stroke-width="3" marker-end="url(#arrow)"/>
+  <line class="connection hasa" x1="1260" y1="280" x2="1490" y2="320" stroke="#bfc8d6" stroke-width="3" marker-end="url(#arrow)"/>
+  <line class="connection hasa" x1="1100" y1="330" x2="1100" y2="640" stroke="#bfc8d6" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <line class="connection depends" x1="1120" y1="320" x2="1430" y2="770" stroke="#6b7280" stroke-width="2" stroke-dasharray="10 8" marker-end="url(#arrow)"/>
+
+  <line class="connection creates" x1="640" y1="890" x2="680" y2="1060" stroke="#22c55e" stroke-width="2" stroke-dasharray="10 8" marker-end="url(#arrow)"/>
+
+  <line class="connection implements" x1="1400" y1="1120" x2="1100" y2="1120" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="10 8" marker-end="url(#arrow)"/>
+
+  <line class="connection implements" x1="1700" y1="1120" x2="1120" y2="1120" stroke="#8b5cf6" stroke-width="2.5" stroke-dasharray="10 8" marker-end="url(#arrow)"/>
+
+  <line class="connection creates" x1="320" y1="1330" x2="940" y2="350" stroke="#22c55e" stroke-width="2" stroke-dasharray="10 8" marker-end="url(#arrow)"/>
+</svg>
+
+<div class="section-banner engine">◎ GAME ENGINE</div>
+<div class="section-banner world">◈ WORLD SYSTEM</div>
+<div class="section-banner inventory-sec">⚙ INVENTORY & CRAFTING</div>
+<div class="section-banner render-sec">◇ RENDERING LAYER</div>
+<div class="section-banner boot">▶ ENTRY POINTS</div>
+
+<div class="card core game" data-name="Game" data-role="Central Game Controller" data-connections="Player,Inventory,MapManager,Renderer,CraftingSystem" style="left:920px;top:180px;">
+  <div class="card-header">
+    <div class="badge">◎ CONTROLLER</div>
+    <h3>Game</h3>
+    <div class="sub">Central orchestration layer</div>
+    <div class="stats">
+      <div class="stat">5 Systems</div>
+      <div class="stat">Core Brain</div>
+      <div class="stat">6 Relations</div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="group-title">Fields</div>
+    <div class="field">mapManager : MapManager</div>
+    <div class="field">inventory : Inventory</div>
+    <div class="field">renderer : Renderer</div>
+    <div class="field">craftingSystem : CraftingSystem</div>
+
+    <div class="group-title" style="margin-top:20px">Key Methods</div>
+    <div class="method">+ movePlayer(Direction)</div>
+    <div class="method">+ craft(int)</div>
+    <div class="method">+ useItem()</div>
+  </div>
+</div>
+
+<div class="card world-card" data-name="Player" data-role="Player State" data-connections="Game,Position" style="left:540px;top:250px;">
+  <div class="card-header">
+    <div class="badge">◎ ENTITY</div>
+    <h3>Player</h3>
+    <div class="sub">Stores player state</div>
+  </div>
+  <div class="body">
+    <div class="field">position : Position</div>
+    <div class="method">+ getPosition()</div>
+    <div class="method">+ setPosition()</div>
+  </div>
+</div>
+
+<div class="card world-card" data-name="MapManager" data-role="Level Progression Controller" data-connections="Game,GameMap" style="left:1440px;top:250px;">
+  <div class="card-header">
+    <div class="badge">⚙ SYSTEM</div>
+    <h3>MapManager</h3>
+    <div class="sub">Handles map switching</div>
+  </div>
+  <div class="body">
+    <div class="field">maps : LinkedHashMap</div>
+    <div class="field">currentMap : GameMap</div>
+    <div class="method">+ switchToMap()</div>
+  </div>
+</div>
+
+<div class="card world-card" data-name="GameMap" data-role="World Grid" data-connections="MapManager,Tile" style="left:1440px;top:520px;">
+  <div class="card-header">
+    <div class="badge">◈ WORLD</div>
+    <h3>GameMap</h3>
+    <div class="sub">Stores level layout</div>
+  </div>
+  <div class="body">
+    <div class="field">grid : char[][]</div>
+    <div class="field">playerStart : Position</div>
+    <div class="method">+ getTile()</div>
+    <div class="method">+ setTile()</div>
+  </div>
+</div>
+
+<div class="card inventory-card" data-name="Inventory" data-role="Persistent Player Inventory" data-connections="Game,Item,Resource,CraftingSystem" style="left:960px;top:640px;">
+  <div class="card-header">
+    <div class="badge">⚙ STORAGE</div>
+    <h3>Inventory</h3>
+    <div class="sub">Items, resources, keys</div>
+  </div>
+  <div class="body">
+    <div class="field">resources : Map</div>
+    <div class="field">items : Map</div>
+    <div class="field">equippedItem : Item</div>
+    <div class="method">+ addItem()</div>
+    <div class="method">+ equipItem()</div>
+  </div>
+</div>
+
+<div class="card inventory-card" data-name="CraftingSystem" data-role="Recipe Engine" data-connections="Inventory,Recipe" style="left:560px;top:820px;">
+  <div class="card-header">
+    <div class="badge">⚙ CRAFTING</div>
+    <h3>CraftingSystem</h3>
+    <div class="sub">Recipe validation & crafting</div>
+  </div>
+  <div class="body">
+    <div class="field">recipes : List</div>
+    <div class="method">+ canCraft()</div>
+    <div class="method">+ craft()</div>
+  </div>
+</div>
+
+<div class="card inventory-card" data-name="Recipe" data-role="Crafting Blueprint" data-connections="CraftingSystem,Item,Resource" style="left:560px;top:1060px;">
+  <div class="card-header">
+    <div class="badge">◈ DATA</div>
+    <h3>Recipe</h3>
+    <div class="sub">Defines ingredients & outputs</div>
+  </div>
+  <div class="body">
+    <div class="field">result : Item</div>
+    <div class="field">ingredients : Map</div>
+    <div class="method">+ describe()</div>
+  </div>
+</div>
+
+<div class="card inventory-card" data-name="Resource" data-role="Collectible Resource" data-connections="Inventory,Recipe" style="left:980px;top:1030px;">
+  <div class="card-header">
+    <div class="badge">◈ ENUM</div>
+    <h3>Resource</h3>
+    <div class="sub">Rocks, sticks, etc</div>
+  </div>
+  <div class="body">
+    <div class="field">ROCK</div>
+    <div class="field">STICK</div>
+    <div class="method">+ fromChar()</div>
+  </div>
+</div>
+
+<div class="card inventory-card" data-name="Item" data-role="Craftable Tool" data-connections="Inventory,Recipe" style="left:1320px;top:1030px;">
+  <div class="card-header">
+    <div class="badge">◈ ENUM</div>
+    <h3>Item</h3>
+    <div class="sub">Bombs, pickaxes</div>
+  </div>
+  <div class="body">
+    <div class="field">PICKAXE</div>
+    <div class="field">BOMB</div>
+    <div class="method">+ getDescription()</div>
+  </div>
+</div>
+
+<div class="card render-card" data-name="Renderer" data-role="Rendering Contract" data-connections="GameFrame,CliRenderer,Game" style="left:980px;top:1080px;">
+  <div class="card-header">
+    <div class="badge">◇ INTERFACE</div>
+    <h3>Renderer</h3>
+    <div class="sub">Rendering abstraction</div>
+  </div>
+  <div class="body">
+    <div class="method">+ render(GameMap, Player)</div>
+  </div>
+</div>
+
+<div class="card render-card" data-name="GameFrame" data-role="Swing GUI Renderer" data-connections="Renderer,MapPanel,Game" style="left:1260px;top:980px;">
+  <div class="card-header">
+    <div class="badge">◇ GUI</div>
+    <h3>GameFrame</h3>
+    <div class="sub">Swing window implementation</div>
+  </div>
+  <div class="body">
+    <div class="field">mapPanel : MapPanel</div>
+    <div class="field">logArea : JTextArea</div>
+    <div class="method">+ refresh()</div>
+  </div>
+</div>
+
+<div class="card cli-card" data-name="CliRenderer" data-role="ASCII Renderer" data-connections="Renderer" style="left:1620px;top:980px;">
+  <div class="card-header">
+    <div class="badge">◇ CLI</div>
+    <h3>CliRenderer</h3>
+    <div class="sub">Terminal renderer</div>
+  </div>
+  <div class="body">
+    <div class="method">+ render()</div>
+  </div>
+</div>
+
+<div class="card cli-card" data-name="Main" data-role="CLI Entry Point" data-connections="Game,CliRenderer" style="left:160px;top:1260px;">
+  <div class="card-header">
+    <div class="badge">▶ ENTRY</div>
+    <h3>Main</h3>
+    <div class="sub">CLI boot sequence</div>
+  </div>
+  <div class="body">
+    <div class="method">+ main(String[])</div>
+  </div>
+</div>
+
+<div class="card cli-card" data-name="GuiMain" data-role="GUI Entry Point" data-connections="GameFrame" style="left:520px;top:1260px;">
+  <div class="card-header">
+    <div class="badge">▶ ENTRY</div>
+    <h3>GuiMain</h3>
+    <div class="sub">Launches Swing GUI</div>
+  </div>
+  <div class="body">
+    <div class="method">+ main(String[])</div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div class="sidebar" id="sidebar">
+  <div class="small">ARCHITECTURE INSPECTOR</div>
+  <h2>Game</h2>
+  <div class="role">Central Game Controller</div>
+
+  <p>
+    This class acts as the orchestration layer of the entire dungeon crawler.
+    It coordinates rendering, inventory, maps, movement, crafting, and player state.
+  </p>
+
+  <h3>Connected Systems</h3>
+  <ul>
+    <li>Player</li>
+    <li>Inventory</li>
+    <li>MapManager</li>
+    <li>Renderer</li>
+    <li>CraftingSystem</li>
+  </ul>
+
+  <h3>Design Notes</h3>
+  <p>
+    The architecture intentionally radiates outward from Game to visually communicate
+    that all gameplay systems are coordinated through one central engine.
+  </p>
+
+  <h3>Interaction Tips</h3>
+  <ul>
+    <li>Click classes to isolate dependencies</li>
+    <li>Use filters to reduce relationship clutter</li>
+    <li>Search any class instantly</li>
+    <li>Zoom using the controls or CTRL + wheel</li>
+  </ul>
+</div>
+
+</div>
+
+<div class="minimap">
+  <div class="mini-dot" style="left:100px;top:35px"></div>
+  <div class="mini-dot" style="left:55px;top:55px"></div>
+  <div class="mini-dot" style="left:150px;top:55px"></div>
+  <div class="mini-dot" style="left:110px;top:95px"></div>
+  <div class="mini-dot" style="left:145px;top:120px"></div>
+  <div class="viewport-box" id="viewportBox" style="left:20px;top:20px;width:80px;height:60px"></div>
+</div>
+
+<div class="zoom-controls">
+  <button class="zoom-btn" id="zoomIn">+</button>
+  <button class="zoom-btn" id="zoomOut">−</button>
+</div>
+
+<script>
+const cards = document.querySelectorAll('.card');
+const sidebar = document.getElementById('sidebar');
+const connections = document.querySelectorAll('.connection');
+const search = document.getElementById('search');
+const canvas = document.getElementById('canvas');
+const viewport = document.getElementById('viewport');
+
+let scale = 1;
+
+cards.forEach(card=>{
+  card.addEventListener('click',()=>{
+
+    cards.forEach(c=>{
+      c.classList.add('dim');
+      c.classList.remove('active');
+    });
+
+    connections.forEach(c=>c.classList.remove('active'));
+
+    card.classList.remove('dim');
+    card.classList.add('active');
+
+    const connected = card.dataset.connections.split(',');
+
+    cards.forEach(c=>{
+      if(connected.includes(c.dataset.name) || c===card){
+        c.classList.remove('dim');
+      }
+    });
+
+    connections.forEach(c=>c.classList.add('active'));
+
+    sidebar.innerHTML = `
+      <div class="small">ARCHITECTURE INSPECTOR</div>
+      <h2>${card.dataset.name}</h2>
+      <div class="role">${card.dataset.role}</div>
+
+      <h3>System Purpose</h3>
+      <p>
+        ${card.dataset.name} is part of the dungeon crawler architecture and participates
+        in gameplay orchestration, rendering, data flow, or interaction handling.
+      </p>
+
+      <h3>Connected Classes</h3>
+      <ul>
+        ${connected.map(c=>`<li>${c}</li>`).join('')}
+      </ul>
+
+      <h3>Architecture Notes</h3>
+      <p>
+        Focus mode isolates the currently selected component so relationships become readable instead of chaotic.
+      </p>
+
+      <h3>Why It Exists</h3>
+      <p>
+        This class helps separate responsibilities and maintain clean object-oriented structure.
+      </p>
+    `;
+  });
+});
+
+search.addEventListener('input',e=>{
+  const value = e.target.value.toLowerCase();
+
+  cards.forEach(card=>{
+    const match = card.dataset.name.toLowerCase().includes(value);
+
+    if(value===''){
+      card.classList.remove('dim');
+      return;
+    }
+
+    if(match){
+      card.classList.remove('dim');
+      card.classList.add('active');
+      card.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});
+    }else{
+      card.classList.add('dim');
+      card.classList.remove('active');
+    }
+  });
+});
+
+const filterButtons = document.querySelectorAll('[data-filter]');
+
+filterButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+
+    filterButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const filter = btn.dataset.filter;
+
+    connections.forEach(c=>{
+      c.classList.remove('hidden');
+
+      if(filter==='all') return;
+
+      if(!c.classList.contains(filter)){
+        c.classList.add('hidden');
+      }
+    });
+  });
+});
+
+const navs = document.querySelectorAll('[data-scroll]');
+
+navs.forEach(nav=>{
+  nav.addEventListener('click',()=>{
+    const target = document.querySelector('.'+nav.dataset.scroll);
+    target.scrollIntoView({behavior:'smooth',block:'center',inline:'center'});
+  });
+});
+
+function applyZoom(){
+  canvas.style.transform = `scale(${scale})`;
+}
+
+zoomIn.addEventListener('click',()=>{
+  scale += .1;
+  applyZoom();
+});
+
+zoomOut.addEventListener('click',()=>{
+  scale = Math.max(.5, scale - .1);
+  applyZoom();
+});
+
+viewport.addEventListener('wheel',(e)=>{
+  if(!e.ctrlKey) return;
+  e.preventDefault();
+
+  if(e.deltaY < 0){
+    scale += .05;
+  }else{
+    scale -= .05;
+  }
+
+  scale = Math.max(.45,Math.min(2,scale));
+  applyZoom();
+},{passive:false});
+</script>
+
+</body>
+</html>
