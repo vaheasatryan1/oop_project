@@ -68,7 +68,6 @@ public class Inventory {
 
     public void addItem(Item item) {
         items.merge(item, 1, Integer::sum);
-        // auto-equip only if nothing is equipped yet
         if (equippedItem == null) equippedItem = item;
     }
 
@@ -81,7 +80,6 @@ public class Inventory {
         if (current <= 1) {
             items.remove(item);
             if (equippedItem == item) {
-                // equip next available item, or nothing
                 equippedItem = items.isEmpty() ? null : items.keySet().iterator().next();
             }
         } else {
